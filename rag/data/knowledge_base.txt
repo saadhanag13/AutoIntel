@@ -1,0 +1,7 @@
+Demand forecasting is the process of predicting future demand for a product or service.
+
+Machine learning models like ARIMA, LSTM, and regression are commonly used.
+
+Data cleaning involves handling missing values, removing duplicates, and normalizing data.
+
+Business insights help organizations make data-driven decisions.
