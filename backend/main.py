@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from backend.services.llm_service import query_llm
 from backend.api.routes import agent_routes
 from backend.api.routes import rag_routes
+from backend.api.routes import ml_routes
 
 app = FastAPI(title="AI Analytics Platform")
 router= APIRouter()
@@ -20,6 +21,7 @@ app.add_middleware(
 app.include_router(llm_router)
 app.include_router(agent_routes.router)
 app.include_router(rag_routes.router)
+app.include_router(ml_routes.router)
 
 @app.get("/")
 def health_check():
