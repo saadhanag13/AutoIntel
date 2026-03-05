@@ -1,0 +1,86 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  AutoIntel — Docker Compose
+#
+#  Services
+#  ────────
+#  backend   FastAPI  :8000  (internal)
+#  frontend  Next.js  :3000  (internal)
+#  nginx     Nginx    :80    (public entry point)
+#
+#  Usage
+#  ─────
+#  docker compose up --build          # first run
+#  docker compose up -d               # detached
+#  docker compose down                # stop & remove containers
+#  docker compose logs -f backend     # tail a service
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .. # project root
+      dockerfile: docker/Dockerfile.backend
+    container_name: autointel_backend
+    restart: unless-stopped
+    env_file:
+      - ../.env # HF_TOKEN etc.
+    environment:
+      LOKY_MAX_CPU_COUNT: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    volumes:
+      # Persist uploaded datasets + training reports across restarts
+      - backend_storage:/app/backend/storage
+      - saved_models:/app/saved_models
+      - chroma_data:/app/chroma_data
+    expose:
+      - "8000"
+    networks:
+      - autointel_net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Next.js Frontend ─────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: autointel_frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - autointel_net
+    depends_on:
+      - backend
+
+  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: autointel_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ../nginx/nginx.docker.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - autointel_net
+    depends_on:
+      - backend
+      - frontend
+
+# ── Named volumes ────────────────────────────────────────────────────────────
+volumes:
+  backend_storage:
+  saved_models:
+  chroma_data:
+
+    # ── Network ──────────────────────────────────────────────────────────────────
+networks:
+  autointel_net:
+    driver: bridge

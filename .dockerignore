@@ -1,0 +1,30 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+
+# ── Runtime / generated ───────────────────────────────────────────────────────
+backend/storage/temp_dataset.pkl
+backend/storage/temp_report.json
+saved_models/
+chroma_data/
+
+# ── Git / Editor ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+.env
+
+# ── Docs / tests ─────────────────────────────────────────────────────────────
+README.md
+tests/
