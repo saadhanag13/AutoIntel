@@ -35,7 +35,7 @@ export default function Sidebar() {
           const data: { messages: string[]; done: boolean; error: string | null } =
             await res.json();
           if (data.messages?.length) {
-            // Replace progress state with the latest snapshot from the server
+            // Replace progress state with the latest snapshot from the server 
             clearProgress();
             data.messages.forEach(addProgress);
           }

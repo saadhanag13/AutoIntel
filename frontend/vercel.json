@@ -1,0 +1,24 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": ".next",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "rewrites": [
+        {
+            "source": "/ml/(.*)",
+            "destination": "https://YOUR-HF-SPACE-URL.hf.space/ml/$1"
+        },
+        {
+            "source": "/rag/(.*)",
+            "destination": "https://YOUR-HF-SPACE-URL.hf.space/rag/$1"
+        },
+        {
+            "source": "/llm/(.*)",
+            "destination": "https://YOUR-HF-SPACE-URL.hf.space/llm/$1"
+        },
+        {
+            "source": "/agent/(.*)",
+            "destination": "https://YOUR-HF-SPACE-URL.hf.space/agent/$1"
+        }
+    ]
+}
