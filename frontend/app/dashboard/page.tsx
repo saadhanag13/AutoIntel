@@ -10,7 +10,7 @@ import InsightsPanel from "@/components/InsightsPanel";
 import ChatPanel from "@/components/chatpanel";
 
 export default function DashboardPage() {
-  const { phase, fileName, report, trainError } = useApp();
+  const { phase, fileName, report, trainError, trainProgress } = useApp();
 
   const isTrained = phase === "trained";
   const isTraining = phase === "training";
@@ -98,15 +98,35 @@ export default function DashboardPage() {
 
           {/* ── Training spinner overlay ── */}
           {isTraining && (
-            <div className="w-full relative bg-[#0a0a0a]/80 backdrop-blur-2xl p-12 rounded-[28px] border border-amber-500/30 text-center shadow-[0_0_40px_rgba(245,158,11,0.1)] overflow-hidden animate-pulse">
+            <div className="w-full relative bg-[#0a0a0a]/80 backdrop-blur-2xl p-10 rounded-[28px] border border-amber-500/30 text-center shadow-[0_0_40px_rgba(245,158,11,0.1)] overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
-              <div className="text-5xl mb-6 text-amber-500" style={{ animation: "spin 2s linear infinite", display: "inline-block" }}>⚙</div>
+              <div className="text-5xl mb-5 text-amber-500" style={{ animation: "spin 2s linear infinite", display: "inline-block" }}>⚙</div>
               <h3 className="text-2xl font-bold mb-3 text-white tracking-tight" style={{ fontFamily: "var(--font-syne)" }}>
                 Synthesizing Neural Pathways…
               </h3>
-              <p className="text-[15px] text-gray-400 font-light max-w-md mx-auto">
-                The massive AutoML architect agent is evaluating thousands of parametric boundaries. This computational burst may take a moment.
+              <p className="text-[15px] text-gray-400 font-light max-w-md mx-auto mb-5">
+                AutoML is evaluating model architectures. This may take 30–60 seconds.
               </p>
+              {/* Live per-model progress */}
+              {trainProgress.length > 0 && (
+                <div className="mt-4 text-left max-w-xs mx-auto space-y-1">
+                  {trainProgress.map((msg, i) => (
+                    <p
+                      key={i}
+                      className="text-[11px] font-mono"
+                      style={{
+                        color: msg.startsWith("✅")
+                          ? "#00d4aa"
+                          : msg.startsWith("⚠")
+                            ? "#f87171"
+                            : "rgba(245,158,11,0.85)",
+                      }}
+                    >
+                      {msg}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -117,9 +137,12 @@ export default function DashboardPage() {
                 ✕
               </div>
               <div className="flex-1 mt-1">
-                <h3 className="text-xl font-bold mb-2 text-[#ff4d4d] tracking-tight" style={{ fontFamily: "var(--font-syne)" }}>Catastrophic Convergence Failure</h3>
-                <p className="text-[14px] text-gray-300 bg-black/20 p-4 rounded-xl border border-[#ff4d4d]/10 font-mono italic">
+                <h3 className="text-xl font-bold mb-2 text-[#ff4d4d] tracking-tight" style={{ fontFamily: "var(--font-syne)" }}>Training Failed</h3>
+                <p className="text-[13px] text-gray-300 bg-black/20 p-4 rounded-xl border border-[#ff4d4d]/10 font-mono">
                   {trainError}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-2">
+                  You can adjust the target column and try again.
                 </p>
               </div>
             </div>

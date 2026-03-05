@@ -56,7 +56,7 @@ class MLEngine:
 
 
     @staticmethod
-    def train(df, target_column, mode="fast"):
+    def train(df, target_column, mode="fast", progress_cb=None):
 
         if target_column not in df.columns:
             raise ValueError(f"Target column '{target_column}' not found in DataFrame.")
@@ -97,7 +97,8 @@ class MLEngine:
             y=y,
             problem_type=problem_type,
             mode="advanced" if advanced else "fast",
-            param_grids=param_grids
+            param_grids=param_grids,
+            progress_cb=progress_cb,
         )
 
         primary_metric = "R2" if problem_type == "regression" else "Accuracy"

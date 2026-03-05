@@ -11,7 +11,7 @@ import numpy as np
 class Trainer:
 
     @staticmethod
-    def train_models(models, X, y, problem_type, mode="fast", param_grids=None):
+    def train_models(models, X, y, problem_type, mode="fast", param_grids=None, progress_cb=None):
 
         results = {}
         trained_models = {}
@@ -47,9 +47,13 @@ class Trainer:
                 print("⚠ Classification requires at least 2 classes.")
 
 
-        for name, model in models.items():
+        for idx, (name, model) in enumerate(models.items(), 1):
 
             print(f"\nTraining model: {name}")
+            if progress_cb:
+                trained_so_far = list(results.keys())
+                msgs = [f"✅ {m}" for m in trained_so_far] + [f"⚙️  Training {name}… ({idx}/{len(models)})"]
+                progress_cb(msgs)
 
             try:
                 # ── Dynamic KNN Adjustment (CV-aware) ──────────────────────

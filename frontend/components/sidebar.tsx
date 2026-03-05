@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { trainModel } from "@/lib/api";
@@ -14,23 +15,54 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const pathname = usePathname();
   const {
-    phase, columns, targetColumn,
-    setTargetColumn, setPhase, setReport, setTrainError,
+    phase, columns, targetColumn, trainProgress,
+    setTargetColumn, setPhase, setReport, setTrainError, addProgress, clearProgress,
   } = useApp();
 
   const isTraining = phase === "training";
   const isTrained = phase === "trained";
   const canTrain = columns.length > 0 && !isTraining;
 
+  // ── Poll /ml/progress during training ──────────────────────────────────────
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isTraining) {
+      pollRef.current = setInterval(async () => {
+        try {
+          const res = await fetch("/api/ml/progress");
+          if (!res.ok) return;
+          const data: { messages: string[]; done: boolean; error: string | null } =
+            await res.json();
+          if (data.messages?.length) {
+            // Replace progress state with the latest snapshot from the server
+            clearProgress();
+            data.messages.forEach(addProgress);
+          }
+        } catch {
+          /* network glitch — ignore */
+        }
+      }, 1000);
+    } else {
+      if (pollRef.current) clearInterval(pollRef.current);
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [isTraining]);
+
+  // ── Train handler ───────────────────────────────────────────────────────────
   const handleTrain = async () => {
     if (!canTrain) return;
     setPhase("training");
     setTrainError(null);
+    clearProgress();
     try {
       const report = await trainModel(targetColumn);
       setReport(report);
     } catch (err) {
-      setTrainError(err instanceof Error ? err.message : "Training failed");
+      // Strip the HTTP status prefix to show a cleaner message
+      const raw = err instanceof Error ? err.message : "Training failed";
+      const clean = raw.replace(/^Training failed \(\d+\):\s*/, "");
+      setTrainError(clean);
       setPhase("uploaded");
     }
   };
@@ -93,15 +125,12 @@ export default function Sidebar() {
                   border: active ? `1px solid ${item.accent}30` : "1px solid transparent",
                 }}
               >
-                {/* Left accent bar */}
                 {active && (
                   <span
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
                     style={{ background: item.accent, boxShadow: `0 0 8px ${item.accent}` }}
                   />
                 )}
-
-                {/* Icon bubble */}
                 <span
                   className="w-7 h-7 rounded-[8px] grid place-items-center text-[14px] shrink-0 transition-all duration-250"
                   style={{
@@ -111,12 +140,9 @@ export default function Sidebar() {
                 >
                   {item.icon}
                 </span>
-
                 <span className="transition-colors duration-250 group-hover:text-white">
                   {item.label}
                 </span>
-
-                {/* Hover glow */}
                 {!active && (
                   <span
                     className="absolute inset-0 rounded-[12px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -130,7 +156,7 @@ export default function Sidebar() {
 
         {/* ── Status chip ── */}
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-[10px] mb-auto"
+          className="flex items-center gap-2 px-3 py-2 rounded-[10px] mb-3"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.06)",
@@ -173,11 +199,39 @@ export default function Sidebar() {
           </span>
         </div>
 
+        {/* ── Live training progress ── */}
+        {isTraining && trainProgress.length > 0 && (
+          <div
+            className="mb-3 px-3 py-2 rounded-[10px] flex flex-col gap-[3px]"
+            style={{
+              background: "rgba(245,158,11,0.05)",
+              border: "1px solid rgba(245,158,11,0.15)",
+            }}
+          >
+            {trainProgress.map((msg, i) => (
+              <p
+                key={i}
+                className="text-[10.5px] leading-snug"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: msg.startsWith("✅")
+                    ? "#00d4aa"
+                    : msg.startsWith("⚠")
+                      ? "#f87171"
+                      : "rgba(255,255,255,0.55)",
+                }}
+              >
+                {msg}
+              </p>
+            ))}
+          </div>
+        )}
+
         {/* ── Divider ── */}
-        <div className="my-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+        <div className="mb-5 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent" />
 
         {/* ── Model config ── */}
-        <div>
+        <div className="mt-auto">
           {columns.length > 0 ? (
             <>
               {/* Label */}
@@ -209,7 +263,6 @@ export default function Sidebar() {
                     </option>
                   ))}
                 </select>
-                {/* Custom chevron */}
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">
                   ▾
                 </span>
@@ -231,11 +284,9 @@ export default function Sidebar() {
                     : "0 4px 24px rgba(108,99,255,0.4), 0 1px 0 rgba(255,255,255,0.1) inset",
                 }}
               >
-                {/* Shimmer sweep */}
                 {!isTraining && (
                   <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
                 )}
-
                 {isTraining ? (
                   <span className="flex items-center justify-center gap-2">
                     <span
