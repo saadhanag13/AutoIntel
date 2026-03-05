@@ -23,7 +23,9 @@ class ModelSelector:
             return {
                 "LinearRegression": LinearRegression(),
                 "Ridge": Ridge(),
-                "RandomForest": RandomForestRegressor(random_state=42),
+                # n_jobs=1 → no subprocess spawning (loky ProcessPool crashes on Windows
+                # inside a uvicorn/ASGI process; threading backend is used instead)
+                "RandomForest": RandomForestRegressor(random_state=42, n_jobs=1),
                 "GradientBoosting": GradientBoostingRegressor(random_state=42),
             }
 
@@ -33,9 +35,11 @@ class ModelSelector:
         elif problem_type == "classification":
 
             # Fast mode models
+            # n_jobs=1 on all models that support it — prevents joblib from
+            # spawning loky worker processes, which crash on Windows inside ASGI.
             models = {
                 "LogisticRegression": LogisticRegression(max_iter=1000),
-                "RandomForestClassifier": RandomForestClassifier(random_state=42),
+                "RandomForestClassifier": RandomForestClassifier(random_state=42, n_jobs=1),
                 "GradientBoostingClassifier": GradientBoostingClassifier(random_state=42),
             }
 

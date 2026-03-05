@@ -2,6 +2,8 @@ import numpy as np
 from .model_selector import ModelSelector
 from .trainer import Trainer
 from data_processing.feature_extender import FeatureImportanceExtractor
+from data_processing.feature_eng import FeatureEngineer
+from data_processing.schema_detector import SchemaDetector
 
 
 class MLEngine:
@@ -54,23 +56,22 @@ class MLEngine:
 
 
     @staticmethod
-    def train(df, target_column, mode= "fast"):
-
-        # if config is None:
-        #     config = {"advanced": False}
-
-        # advanced = config.get("advanced", False)
+    def train(df, target_column, mode="fast"):
 
         if target_column not in df.columns:
             raise ValueError(f"Target column '{target_column}' not found in DataFrame.")
 
-        X= df.drop(columns=[target_column])
-        y= df[target_column]
-
         # validate target
         import pandas as pd
-        if pd.api.types.is_datetime64_any_dtype(y):
+        y_raw = df[target_column]
+        if pd.api.types.is_datetime64_any_dtype(y_raw):
             raise ValueError("Datetime column cannot be used as target variable.")
+
+        # Use FeatureEngineer for proper encoding
+        schema = SchemaDetector.detect_schema(df)
+        X, y, preprocessor, feature_names = FeatureEngineer.build_features(
+            df, schema, target_column=target_column
+        )
 
         problem_type, reason = MLEngine.detect_problem_type(y)
 
@@ -110,26 +111,18 @@ class MLEngine:
             "best_model": best_model_name,
             "best_score": results[best_model_name][primary_metric],
             "primary_metric": primary_metric,
-            "model_comparison": results, 
-            "feature_importance" : None, 
+            "model_comparison": results,
+            "feature_names": list(feature_names),
+            "feature_importance": None,
             "reason": reason
         }
 
-        # ---------------------------
         # Feature Importance
-        # ---------------------------
-
-        # feature_importance = None
-
-        # if feature_names is not None:
-        #     feature_importance = FeatureImportanceExtractor.extract(
-        #         best_model,
-        #         feature_names
-        #     )
-
-        # report["feature_importance"] = feature_importance
-        # report["feature_importance"] = None
-        # report["reason"] = reason
+        feature_importance = FeatureImportanceExtractor.extract(
+            best_model,
+            feature_names
+        )
+        report["feature_importance"] = feature_importance
 
         return report, trained_models, best_model
 

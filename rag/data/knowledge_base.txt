@@ -1,7 +1,35 @@
-Demand forecasting is the process of predicting future demand for a product or service.
+Demand forecasting is the process of predicting future demand for a product or service using historical data and statistical models.
 
-Machine learning models like ARIMA, LSTM, and regression are commonly used.
+Machine learning models like ARIMA, LSTM, Random Forest, Gradient Boosting, and regression are commonly used for prediction tasks.
 
-Data cleaning involves handling missing values, removing duplicates, and normalizing data.
+Data cleaning involves handling missing values, removing duplicates, encoding categorical variables, and normalising numeric features.
 
-Business insights help organizations make data-driven decisions.
+Business insights help organisations make data-driven decisions by identifying patterns, trends, and anomalies in data.
+
+Feature importance measures how much each input variable contributes to a model's predictions. High-importance features drive most of the prediction accuracy.
+
+Classification models predict which category or class a data point belongs to. Accuracy, precision, recall, and F1-score are common evaluation metrics.
+
+Regression models predict a continuous numeric value. R-squared (R2), RMSE, and MAE are common evaluation metrics for regression.
+
+Gradient Boosting models (XGBoost, LightGBM, GradientBoostingClassifier) are ensemble methods that sequentially build trees and are often the best-performing models for structured data.
+
+Random Forest is an ensemble of decision trees that works well for both classification and regression and provides native feature importance scores.
+
+Logistic Regression is a linear model for classification that is fast, interpretable, and works well when the relationship between features and target is approximately linear.
+
+Overfitting occurs when a model performs well on training data but poorly on unseen data. Techniques like cross-validation, regularisation, and pruning help address it.
+
+Cross-validation splits the dataset into multiple folds to provide a more reliable estimate of model performance than a single train-test split.
+
+Hyperparameter tuning (e.g. via GridSearchCV) optimises model parameters like learning rate, tree depth, and regularisation strength to improve performance.
+
+StandardScaler normalises numeric features so they have zero mean and unit variance, which helps linear and distance-based models converge faster.
+
+OneHotEncoder converts categorical variables into binary indicator columns so machine learning models can process them numerically.
+
+Missing values can be imputed with the median (for numeric columns) or the most frequent value (for categorical columns) before model training.
+
+Principal Component Analysis (PCA) reduces dimensionality by projecting data onto the directions of greatest variance, which can help with noise and computational efficiency.
+
+Model deployment means serving a trained model via an API so that production systems can send new data and receive predictions in real time.

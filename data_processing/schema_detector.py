@@ -23,10 +23,14 @@ class SchemaDetector:
                 schema["datetime_columns"].append(column)
 
             else:
-                # Try parsing as datetime
+                # Try parsing as datetime — only classify if majority parses successfully
                 try:
-                    parsed = pd.to_datetime(df[column], errors="coerce", infer_datetime_format=True)
-                    schema["datetime_columns"].append(column)
+                    parsed = pd.to_datetime(df[column], format="mixed", errors="coerce")
+                    valid_ratio = parsed.notna().mean()
+                    if valid_ratio > 0.5:
+                        schema["datetime_columns"].append(column)
+                    else:
+                        schema["categorical_columns"].append(column)
                 except Exception:
                     schema["categorical_columns"].append(column)
 

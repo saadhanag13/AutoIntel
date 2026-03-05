@@ -1,0 +1,128 @@
+/* 
+@import "tailwindcss";
+
+:root {
+  --bg: #08090d;
+  --surface: #0f1117;
+  --card: #13151f;
+  --border: rgba(255,255,255,0.07);
+  --accent1: #6c63ff;
+  --accent2: #00d4aa;
+  --accent3: #ff6b6b;
+  --txt: #e8eaf0;
+  --muted: #6b6f82;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'DM Sans', sans-serif;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: -200px;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -200px;
+  right: -100px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,212,170,0.10) 0%, transparent 70%);
+  z-index: 0;
+} */
+
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-bg:       #08090d;
+  --color-surface:  #0f1117;
+  --color-card:     #13151f;
+  --color-border:   rgba(255, 255, 255, 0.07);
+  --color-accent1:  #6c63ff;
+  --color-accent2:  #00d4aa;
+  --color-accent3:  #ff6b6b;
+  --color-amber:    #f59e0b;
+  --color-txt:      #e8eaf0;
+  --color-muted:    #6b6f82;
+
+  --font-syne:       "Syne", sans-serif;
+  --font-dm:         "DM Sans", sans-serif;
+  --font-mono:       "JetBrains Mono", monospace;
+}
+
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-txt);
+  font-family: var(--font-dm);
+  overflow-x: hidden;
+}
+
+/* ── Ambient background blobs ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px; left: -200px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(108,99,255,0.13) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -200px; right: -100px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,212,170,0.09) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 999px; }
+
+/* ── Pulse dot ── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(1.5); }
+}
+.animate-pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+/* ── Bar fill animation ── */
+@keyframes bar-grow {
+  from { width: 0; }
+}
+.animate-bar { animation: bar-grow 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+/* ── Fade-up ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.animate-fade-up { animation: fade-up 0.5s ease forwards; }
+.delay-100 { animation-delay: 0.1s; opacity: 0; }
+.delay-200 { animation-delay: 0.2s; opacity: 0; }
+.delay-300 { animation-delay: 0.3s; opacity: 0; }
+.delay-400 { animation-delay: 0.4s; opacity: 0; }
+
+/* ── Spin (training indicator) ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

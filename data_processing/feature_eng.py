@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
 
@@ -58,12 +59,14 @@ class FeatureEngineer:
         # ----------------------------
         numeric_transformer = Pipeline(
             steps=[
+                ("imputer", SimpleImputer(strategy="median")),
                 ("scaler", StandardScaler())
             ]
         )
 
         categorical_transformer = Pipeline(
             steps=[
+                ("imputer", SimpleImputer(strategy="most_frequent")),
                 ("encoder", OneHotEncoder(handle_unknown="ignore"))
             ]
         )
@@ -71,12 +74,13 @@ class FeatureEngineer:
         # ----------------------------
         # 5️⃣ Column Transformer
         # ----------------------------
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ("num", numeric_transformer, numeric_cols),
-                ("cat", categorical_transformer, categorical_cols)
-            ]
-        )
+        transformers = []
+        if numeric_cols:
+            transformers.append(("num", numeric_transformer, numeric_cols))
+        if categorical_cols:
+            transformers.append(("cat", categorical_transformer, categorical_cols))
+
+        preprocessor = ColumnTransformer(transformers=transformers)
 
         # ----------------------------
         # 6️⃣ Fit & Transform

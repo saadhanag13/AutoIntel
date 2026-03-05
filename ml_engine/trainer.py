@@ -51,141 +51,95 @@ class Trainer:
 
             print(f"\nTraining model: {name}")
 
-            # ------------------------------------
-            # Dynamic KNN Adjustment
-            # ------------------------------------
-            # if problem_type == "classification" and name == "KNeighborsClassifier":
-            #     max_neighbors = len(X_train)
+            try:
+                # ── Dynamic KNN Adjustment (CV-aware) ──────────────────────
+                if name == "KNeighborsClassifier":
+                    min_class_count = y_train.value_counts().min()
+                    cv_splits = min(5, min_class_count)
+                    min_fold_train_size = X_train.shape[0] - (X_train.shape[0] // cv_splits)
 
-            #     # Adjust model default n_neighbors if needed
-            #     if hasattr(model, "n_neighbors"):
-            #         if model.n_neighbors > max_neighbors:
-            #             model.set_params(n_neighbors=max_neighbors)
+                    if param_grids and name in param_grids:
+                        if "n_neighbors" in param_grids[name]:
+                            param_grids[name]["n_neighbors"] = [
+                                k for k in param_grids[name]["n_neighbors"]
+                                if k <= min_fold_train_size
+                            ]
+                            if not param_grids[name]["n_neighbors"]:
+                                print("⚠ No valid n_neighbors for CV folds. Skipping GridSearch.")
+                                model.fit(X_train, y_train)
+                                y_pred = model.predict(X_test)
+                                from sklearn.metrics import accuracy_score
+                                results[name] = {"Accuracy": accuracy_score(y_test, y_pred)}
+                                trained_models[name] = model
+                                continue
 
-            #     # Adjust param grid safely
-            #     if param_grids and name in param_grids:
-            #         if "n_neighbors" in param_grids[name]:
-            #             param_grids[name]["n_neighbors"] = [
-            #                 k for k in param_grids[name]["n_neighbors"]
-            #                 if k <= max_neighbors
-            #             ]
+                # ── ADVANCED MODE → GridSearch ─────────────────────────────
+                if mode == "advanced" and param_grids is not None:
 
-            #             # If no valid neighbors left → fallback
-            #             if not param_grids[name]["n_neighbors"]:
-            #                 print("⚠ No valid n_neighbors for dataset size. Skipping GridSearch.")
-            #                 model.fit(X_train, y_train)
-            #                 best_model = model
-            #                 y_pred = best_model.predict(X_test)
+                    if problem_type == "classification":
+                        class_counts = y_train.value_counts()
+                        min_class_count = class_counts.min()
 
-            #                 from sklearn.metrics import accuracy_score
-            #                 score = accuracy_score(y_test, y_pred)
-            #                 results[name] = {"Accuracy": score}
-            #                 trained_models[name] = best_model
-            #                 continue
-
-            # ------------------------------------
-            # Dynamic KNN Adjustment (CV-aware)
-            # ------------------------------------
-            if name == "KNeighborsClassifier":
-                min_class_count = y_train.value_counts().min()
-                cv_splits = min(5, min_class_count)
-
-                # Approximate smallest training fold size
-                min_fold_train_size = len(X_train) - (len(X_train) // cv_splits)
-
-                if param_grids and name in param_grids:
-                    if "n_neighbors" in param_grids[name]:
-                        param_grids[name]["n_neighbors"] = [
-                            k for k in param_grids[name]["n_neighbors"]
-                            if k <= min_fold_train_size
-                        ]
-
-                        if not param_grids[name]["n_neighbors"]:
-                            print("⚠ No valid n_neighbors for CV folds. Skipping GridSearch.")
+                        if min_class_count < 2:
+                            print("⚠ Too few samples per class. Skipping CV.")
                             model.fit(X_train, y_train)
                             best_model = model
-                            y_pred = best_model.predict(X_test)
+                        else:
+                            cv_splits = min(5, min_class_count)
+                            cv_strategy = StratifiedKFold(n_splits=cv_splits)
+                            grid = GridSearchCV(
+                                model,
+                                param_grids.get(name, {}),
+                                cv=cv_strategy,
+                                scoring="accuracy",
+                                n_jobs=1,   # no subprocess spawning on Windows
+                            )
+                            grid.fit(X_train, y_train)
+                            best_model = grid.best_estimator_
 
-                            from sklearn.metrics import accuracy_score
-                            score = accuracy_score(y_test, y_pred)
-                            results[name] = {"Accuracy": score}
-                            trained_models[name] = best_model
-                            continue
+                    else:   # Regression
+                        n_samples = len(y_train)
+                        if n_samples < 5:
+                            print("⚠ Too few samples. Skipping CV.")
+                            model.fit(X_train, y_train)
+                            best_model = model
+                        else:
+                            cv_splits = min(5, n_samples)
+                            cv_strategy = KFold(n_splits=cv_splits)
+                            grid = GridSearchCV(
+                                model,
+                                param_grids.get(name, {}),
+                                cv=cv_strategy,
+                                scoring="r2",
+                                n_jobs=1,   # no subprocess spawning on Windows
+                            )
+                            grid.fit(X_train, y_train)
+                            best_model = grid.best_estimator_
 
-            # ------------------------------------
-            # ADVANCED MODE → GridSearch
-            # ------------------------------------
-            if mode == "advanced" and param_grids is not None:
+                # ── FAST MODE → Direct Fit ─────────────────────────────────
+                else:
+                    model.fit(X_train, y_train)
+                    best_model = model
+
+                # ── Evaluation ─────────────────────────────────────────────
+                y_pred = best_model.predict(X_test)
 
                 if problem_type == "classification":
-                    class_counts = y_train.value_counts()
-                    min_class_count = class_counts.min()
+                    from sklearn.metrics import accuracy_score
+                    results[name] = {"Accuracy": accuracy_score(y_test, y_pred)}
+                else:
+                    from sklearn.metrics import r2_score
+                    results[name] = {"R2": r2_score(y_test, y_pred)}
 
-                    # If too few samples per class → skip CV
-                    if min_class_count < 2:
-                        print("⚠ Too few samples per class. Skipping CV.")
-                        model.fit(X_train, y_train)
-                        best_model = model
+                trained_models[name] = best_model
 
-                    else:
-                        cv_splits = min(5, min_class_count)
-                        cv_strategy = StratifiedKFold(n_splits=cv_splits)
+            except Exception as e:
+                print(f"\n⚠ Skipping {name}: {type(e).__name__}: {e}")
+                continue
 
-                        grid = GridSearchCV(
-                            model,
-                            param_grids.get(name, {}),
-                            cv=cv_strategy,
-                            scoring="accuracy",
-                            n_jobs=-1
-                        )
-
-                        grid.fit(X_train, y_train)
-                        best_model = grid.best_estimator_
-
-                else:  # Regression
-                    n_samples = len(y_train)
-
-                    if n_samples < 5:
-                        print("⚠ Too few samples. Skipping CV.")
-                        model.fit(X_train, y_train)
-                        best_model = model
-
-                    else:
-                        cv_splits = min(5, n_samples)
-                        cv_strategy = KFold(n_splits=cv_splits)
-
-                        grid = GridSearchCV(
-                            model,
-                            param_grids.get(name, {}),
-                            cv=cv_strategy,
-                            scoring="r2",
-                            n_jobs=-1
-                        )
-
-                        grid.fit(X_train, y_train)
-                        best_model = grid.best_estimator_
-
-            # ------------------------------------
-            # FAST MODE → Direct Fit
-            # ------------------------------------
-            else:
-                model.fit(X_train, y_train)
-                best_model = model
-
-            # ------------------------------------
-            # Evaluation
-            # ------------------------------------
-            y_pred = best_model.predict(X_test)
-
-            if problem_type == "classification":
-                from sklearn.metrics import accuracy_score
-                score = accuracy_score(y_test, y_pred)
-                results[name] = {"Accuracy": score}
-            else:
-                from sklearn.metrics import r2_score
-                score = r2_score(y_test, y_pred)
-                results[name] = {"R2": score}
-
-            trained_models[name] = best_model
+        if not results:
+            raise RuntimeError(
+                "All models failed to train. Check the dataset and target column."
+            )
 
         return results, trained_models

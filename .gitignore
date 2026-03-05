@@ -45,3 +45,22 @@ Thumbs.db
 # Model Artifacts (optional)
 # ==============================
 saved_models/*.pkl
+
+# ==============================
+# Runtime Storage (generated at runtime)
+# ==============================
+backend/storage/temp_dataset.pkl
+backend/storage/temp_report.json
+
+# ==============================
+# Node / Next.js
+# ==============================
+node_modules/
+.next/
+frontend/node_modules/
+frontend/.next/
+
+# ==============================
+# ChromaDB local data
+# ==============================
+chroma_data/

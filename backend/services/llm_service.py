@@ -22,8 +22,8 @@ class LLMService:
 
         try:
             ai_message = result["choices"][0]["message"]["content"]
-        except Exception:
-            return result
+        except Exception as e:
+            return f"Error from LLM API: {str(result)}"
 
         SessionManager.add_assistant_message(session_id, ai_message)
 

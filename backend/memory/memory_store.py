@@ -16,6 +16,10 @@ class MemoryStore:
             "content": content
         })
 
+        # Keeps only the last 20 messages in memory to prevent infinite token accumulation over long 24/7 sessions.
+        if len(self.sessions[session_id]) > 20:
+            self.sessions[session_id] = self.sessions[session_id][-20:]
+
     def clear_session(self, session_id: str):
         if session_id in self.sessions:
             del self.sessions[session_id]
