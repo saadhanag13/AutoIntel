@@ -4,6 +4,15 @@
 >
 > Upload a CSV, train a full AutoML pipeline, get AI-generated insights, and chat with your data — all in one platform.
 
+### 🔗 Live Demo
+
+| Service | URL |
+|---|---|
+| **Frontend** | [auto-intel-iota.vercel.app](https://auto-intel-iota.vercel.app/dashboard) |
+| **Backend API** | [saadhanagn-autointel-backend.hf.space](https://saadhanagn-autointel-backend.hf.space) |
+
+> **Note:** The backend runs on Hugging Face Spaces (free tier) and may sleep after ~1 hour of inactivity. The first request after sleep takes ~30 seconds to wake up — subsequent requests are fast.
+
 ---
 
 ## Table of Contents
@@ -18,12 +27,13 @@
    - [Running the Backend](#running-the-backend)
    - [Running the Frontend](#running-the-frontend)
    - [Running with Nginx](#running-with-nginx)
-6. [API Reference](#api-reference)
-7. [AutoML Pipeline](#automl-pipeline)
-8. [RAG System](#rag-system)
-9. [Agent System](#agent-system)
-10. [Frontend Pages](#frontend-pages)
-11. [Testing](#testing)
+6. [Deployment](#deployment)
+7. [API Reference](#api-reference)
+8. [AutoML Pipeline](#automl-pipeline)
+9. [RAG System](#rag-system)
+10. [Agent System](#agent-system)
+11. [Frontend Pages](#frontend-pages)
+12. [Testing](#testing)
 
 ---
 
@@ -312,6 +322,62 @@ nginx -s stop
 ```
 
 > See [`nginx/README.md`](nginx/README.md) for full Nginx setup instructions.
+
+---
+
+## Deployment
+
+### Production (Vercel + Hugging Face Spaces)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser                                  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │  Vercel (free)  │  ← Next.js frontend
+                    │  auto-intel-    │     (static + serverless)
+                    │  iota.vercel.app│
+                    └────┬───────┬────┘
+                         │       │
+           next.config   │       │ /api/ml/train
+           rewrites      │       │  (custom route.ts,
+                         │       │   5-min timeout)
+                         ▼       ▼
+                    ┌──────────────────┐
+                    │  HF Spaces (free)│  ← FastAPI backend
+                    │  saadhanagn-     │     (Docker, CPU Basic)
+                    │  autointel-      │
+                    │  backend.hf.space│
+                    └──────────────────┘
+```
+
+| Service | Platform | URL | Cost |
+|---|---|---|---|
+| Frontend (Next.js) | Vercel | [auto-intel-iota.vercel.app](https://auto-intel-iota.vercel.app) | Free |
+| Backend (FastAPI) | HF Spaces | [saadhanagn-autointel-backend.hf.space](https://saadhanagn-autointel-backend.hf.space) | Free |
+
+**Environment variables (Vercel dashboard):**
+```
+FASTAPI_URL = https://saadhanagn-autointel-backend.hf.space
+```
+
+**Secrets (HF Space settings → Variables and secrets):**
+```
+HF_TOKEN        = hf_your_token_here
+ALLOWED_ORIGINS = https://auto-intel-iota.vercel.app
+```
+
+### Alternative: Docker Compose (self-hosted)
+
+The `docker/` folder contains a full Docker Compose setup with Nginx reverse proxy:
+
+```bash
+cd docker
+cp ../.env .env          # needs HF_TOKEN
+docker compose up -d --build
+# → http://localhost (Nginx on port 80)
+```
 
 ---
 
