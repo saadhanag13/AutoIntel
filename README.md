@@ -38,8 +38,8 @@ CSV Upload → Schema Detection → AutoML Training → Model Evaluation
 
 Key capabilities:
 - **AutoML** — automatically selects best-fit classification or regression models with optional GridSearch hyper-parameter tuning
-- **RAG Chat** — ask natural language questions about your trained model results using a ChromaDB-backed retrieval pipeline
-- **Multi-Agent AI** — specialised CrewAI agents for analytics, data cleaning, ML prediction strategy, and insight generation
+- **RAG Chat** — ask natural language questions about your trained model results using a FAISS-backed retrieval pipeline
+- **Multi-Agent AI** — specialised agents for analytics, data cleaning, ML prediction strategy, and insight generation
 - **LLM Integration** — HuggingFace Inference Router with `meta-llama/Llama-3.1-8B-Instruct`
 
 ---
@@ -109,15 +109,12 @@ Key capabilities:
 ### Backend
 | Layer | Technology |
 |---|---|
-| Web framework | FastAPI `0.129.0` + Uvicorn `0.40.0` |
-| ML / AutoML | scikit-learn `1.8.0`, numpy `2.4.2`, pandas `2.3.3` |
+| Web framework | FastAPI + Uvicorn |
+| ML / AutoML | scikit-learn, numpy, pandas |
 | LLM client | HuggingFace Inference Router (`meta-llama/Llama-3.1-8B-Instruct`) |
-| Embeddings | sentence-transformers `5.2.2` |
-| Vector store | ChromaDB `1.1.1` |
-| LLM orchestration | LangChain `1.2.10` |
-| Agent framework | CrewAI `1.9.3` + MCP `1.23.3` |
-| PDF parsing | pdfplumber `0.11.9` |
-| Config | pydantic-settings `2.10.1`, python-dotenv `1.1.1` |
+| Embeddings | sentence-transformers (`all-MiniLM-L6-v2`) |
+| Vector store | FAISS (faiss-cpu) |
+| Config | pydantic-settings, python-dotenv |
 | Reverse proxy | Nginx (CORS handled at proxy layer) |
 
 ### Frontend
@@ -177,14 +174,14 @@ ai-analytics-platform/
 │   └── rag_src/
 │       ├── retriever.py         # Main RAG query handler
 │       ├── rag_service.py       # Service layer
-│       ├── vector_store.py      # ChromaDB client wrapper
+│       ├── vector_store.py      # FAISS vector index wrapper
 │       ├── embeddings.py        # sentence-transformers encoder
 │       ├── chunker.py           # Text chunking strategy
-│       ├── doc_loader.py        # PDF / text document loader
-│       ├── uploader.py          # Ingest docs into ChromaDB
+│       ├── doc_loader.py        # Text document loader
+│       ├── uploader.py          # Ingest docs into FAISS index
 │       └── rag_agent.py
 │
-├── agents/                     # CrewAI agent definitions
+├── agents/                     # Agent definitions
 │   ├── agent_manager.py        # Routes prompts to the right agent
 │   ├── orchestrator.py         # Master orchestrator
 │   ├── analytics_agent.py      # Trend & performance analysis
@@ -432,21 +429,21 @@ The RAG pipeline (`rag/rag_src/`) enables natural language Q&A over your trainin
 ```
 User Query
   → embeddings.py      (encode with sentence-transformers)
-  → vector_store.py    (similarity search in ChromaDB)
+  → vector_store.py    (similarity search in FAISS)
   → retriever.py       (fetch relevant chunks + training report context)
   → hf_client.py       (send augmented prompt to LLM)
   → Response
 ```
 
 **Model:** `meta-llama/Llama-3.1-8B-Instruct` via HuggingFace Inference Router  
-**Vector store:** ChromaDB (local persistence)  
-**Embeddings:** `sentence-transformers` (all-MiniLM or similar)
+**Vector store:** FAISS (faiss-cpu, in-memory index)  
+**Embeddings:** `sentence-transformers` (`all-MiniLM-L6-v2`)
 
 ---
 
 ## Agent System
 
-Agents are built with **CrewAI** and routed by `agents/agent_manager.py`:
+Agents are routed by `agents/agent_manager.py`:
 
 | Agent | File | Purpose |
 |---|---|---|
@@ -495,7 +492,7 @@ The **orchestrator** (`orchestrator.py`) coordinates multi-agent tasks when a si
 ## Notes
 
 - **Dev mode needs only 2 terminals** — uvicorn + Next.js. Nginx is optional (production only).
-- **CORS** is not needed in dev (same-origin via Next.js proxy). In production, CORS is handled by Nginx. FastAPI has **no** `CORSMiddleware`.
+- **CORS** is not needed in dev (same-origin via Next.js proxy). In production, `CORSMiddleware` is enabled in FastAPI (controlled via `ALLOWED_ORIGINS` env var). Nginx also handles CORS when used.
 - **Upload limit** — 200 MB (enforced client-side in `uploadPanel.tsx` and server-side via Nginx `client_max_body_size`). Preview reads only the first 16 KB.
 - **Training timeout** — the `/api/ml/train` API route has a 5-minute timeout. In Nginx, `proxy_read_timeout 300s` is set.
 - **Windows / joblib** — `LOKY_MAX_CPU_COUNT=1` is set in `main.py` and `ml_service.py` to prevent `BrokenProcessPool` crashes. All RandomForest models use `n_jobs=1`.
