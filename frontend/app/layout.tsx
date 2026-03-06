@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import Sidebar from "@/components/sidebar";
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: "AutoML — AI Analytics Platform",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
         </AppProvider>
+        <Analytics />
       </body>
     </html>
   );
