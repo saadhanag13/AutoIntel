@@ -33,7 +33,6 @@
 9. [RAG System](#rag-system)
 10. [Agent System](#agent-system)
 11. [Frontend Pages](#frontend-pages)
-12. [Testing](#testing)
 
 ---
 
